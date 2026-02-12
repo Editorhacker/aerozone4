@@ -2,7 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const XLSX = require("xlsx");
 const { db } = require("./../config/firebase");
-const {getCache, setCache, clearCache}= require('../utils/serverCache');
+
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -140,17 +140,6 @@ router.post("/upload-excel", upload.single("file"), async (req, res) => {
 // ✅ New route to fetch data
 router.get("/get-data", async (req, res) => {
   try {
-
-        // ✅ STEP 1: Check cache first
-    const cached = getCache("get-data");
-    if (cached) {
-      console.log("⚡ get-data served from cache");
-      return res.json(cached);
-    }
-
-    console.log("🔥 Fetching get-data from Firestore");
-
-
     // 1️⃣ Fetch excelData
     const excelSnap = await db.collection("excelData").get();
     const excelData = excelSnap.docs.map((doc) => ({
@@ -179,8 +168,6 @@ router.get("/get-data", async (req, res) => {
         IndentPlannedOrder: match ? match.PLANNED_ORDER : "NA",
       };
     });
-// ✅ STEP 2: Save cache
-    setCache("get-data", mergedData);
 
     res.json(mergedData);
   } catch (err) {
@@ -193,17 +180,8 @@ router.get("/get-data", async (req, res) => {
 // ✅ Fetch Indent_Quantity collection
 router.get("/get-indent", async (req, res) => {
   try {
-
-    const cached = getCache("get-indent");
-    if (cached) {
-      console.log("⚡ get-indent served from cache");
-      return res.json(cached);
-    }
-
-    console.log("🔥 Fetching indent from Firestore");
     const snapshot = await db.collection("Indent_Quantity").get();
     const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-     setCache("get-indent", data);
     res.json(data);
   } catch (err) {
     console.error(err);
@@ -213,13 +191,6 @@ router.get("/get-indent", async (req, res) => {
 
 router.get("/prism", async (req, res) => {
   try {
-        const cached = getCache("prism");
-    if (cached) {
-      console.log("⚡ prism served from cache");
-      return res.json(cached);
-    }
-
-    console.log("🔥 Fetching prism from Firestore");
     const excelSnap = await db.collection("excelData").get();
     const excelData = excelSnap.docs.map(doc => ({ ...doc.data() }));
 
@@ -289,7 +260,6 @@ router.get("/prism", async (req, res) => {
       };
     });
 
-    setCache("prism", result);
     res.json(result);
   } catch (err) {
     console.error("🔥 Error fetching merged data:", err);
@@ -299,15 +269,6 @@ router.get("/prism", async (req, res) => {
 
 router.get("/orbit", async (req, res) => {
   try {
-
-     // 1️⃣ check cache first
-    const cached = getCache("orbit");
-    if (cached) {
-      console.log("⚡ orbit served from cache");
-      return res.json(cached);
-    }
-
-    console.log("🔥 Fetching orbit from Firestore");
     const excelSnap = await db.collection("excelData").get();
 
     const excelData = excelSnap.docs.map(doc => {
@@ -341,8 +302,6 @@ router.get("/orbit", async (req, res) => {
         
       };
     });
-
-    setCache("orbit", excelData);
 
     res.status(200).json(excelData);
   } catch (err) {
